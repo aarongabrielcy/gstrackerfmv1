@@ -10,6 +10,7 @@ class NetManager {
     public:
         NetManager(SIM7600& sim7600);
         void activeTcpService();
-        bool configTcpServer(const String& server, int port);
+        void configTcpServer(const String& server, int port);
+        bool initializeModule();
 };
 #endif

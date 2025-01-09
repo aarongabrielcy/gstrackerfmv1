@@ -3,5 +3,15 @@
 
 #include <Arduino.h>
 
-String trimResponse(const String& response);
+class Utils
+{
+private:
+
+public:
+    String trimResponse(const String& response);
+    String cleanGnssData(const String& cleanData);
+    String formatCoordinates(double coord, char direction);
+    String formatDate(const String &date);
+    String formatTime(const String &utcTime);
+};
 #endif

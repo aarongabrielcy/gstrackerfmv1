@@ -69,7 +69,7 @@ String SIM7600::processResponse(const String& command,  const String& fcommand, 
   /*Serial.print("Procesando respuesta... ");
   Serial.println(processedResponse);*/
 
-  processedResponse = trimResponse(processedResponse);
+  processedResponse = utils.trimResponse(processedResponse);
   
   if (processedResponse.endsWith("OK")) {
     processedResponse.remove(processedResponse.length() - 2);
@@ -119,4 +119,34 @@ int SIM7600::commandType(const String& command) {
     //Serial.println("Tipo de comando desconocido.");
     return UNKNOWN;
   }
+}
+String SIM7600::sendReadDataToServer(const String& fcommand, const String& message, int timeout) {
+
+  simSerial.println(message);  // Enviar comando  
+  String response = "";
+  long startTime = millis();
+  while ((millis() - startTime) < timeout) {
+    if (simSerial.available()) {
+      char c = simSerial.read();
+      response += c;
+    }
+  }
+  
+  response.replace(message, "");
+  /*response.replace("+"+fcommand+": ", "");*/
+  response = utils.trimResponse(response);
+  
+  return response; //devolver un JSON con el formato [{server: ""}, {port:0},{length:0},{response: ""}]
+}
+String SIM7600::sendReadDataToGNSS(int timeout) {
+  String rawdata = "";
+  
+  long startTime = millis();
+  while ((millis() - startTime) < timeout) {
+    if (simSerial.available()) {
+      char c = simSerial.read();
+      rawdata += c;
+    }
+  }
+  return utils.cleanGnssData(rawdata);
 }

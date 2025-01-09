@@ -27,6 +27,12 @@ void PwModule::blinkLedGnss(int fixState) {
       digitalWrite(GNSS_LED_PIN, ledState);
    }
 }
+void PwModule::initInIgn(int ignPin){
+  this->pinIgn = ignPin;
+  pinMode(ignPin, INPUT);
+}
 
-
+bool PwModule::getStateIgn(){
+  return digitalRead(pinIgn);
+}
 

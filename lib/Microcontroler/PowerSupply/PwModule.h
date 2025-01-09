@@ -5,15 +5,16 @@
 #include "Config.h"
 
 class PwModule {
+private:
+    unsigned long previousMillis = 0;
+    unsigned long ledInterval = 100;
+    int ledState = LOW, pinIgn;
 public:
     void powerKey();
     void powerModule();
     void powerLedGnss();
     void blinkLedGnss(int fixState);
-
-private:
-    unsigned long previousMillis = 0;
-    unsigned long ledInterval = 150; // Ejemplo: intervalo de parpadeo de 1 segundo
-    int ledState = LOW; // Estado inicial del LED
+    void initInIgn(int pin);
+    bool getStateIgn();
 };
 #endif

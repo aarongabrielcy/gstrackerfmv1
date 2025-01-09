@@ -14,4 +14,7 @@
 #define POWER_LED_PIN 20
 #define SIM_DTR_PIN   42
 
+#define DEFAULT_SVR "34.196.135.179"
+#define DEFAULT_PORT 5200
+
 #endif
