@@ -13,4 +13,20 @@ void PwModule::powerKey(){
   delay(3000);
 }
 
+void PwModule::powerLedGnss(){
+  pinMode(GNSS_LED_PIN, OUTPUT);
+  digitalWrite(GNSS_LED_PIN, false);
+}
+void PwModule::blinkLedGnss(int fixState) {
+  unsigned long currentMillis = millis();
+   if (currentMillis - previousMillis >= ledInterval) {
+        previousMillis = currentMillis; // Actualiza el tiempo del último cambio
+
+        // Cambia el estado del LED
+      fixState == 0? ledState = !ledState : ledState = fixState;
+      digitalWrite(GNSS_LED_PIN, ledState);
+   }
+}
+
+
 
