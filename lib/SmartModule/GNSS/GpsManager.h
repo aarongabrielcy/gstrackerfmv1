@@ -11,6 +11,7 @@ class GpsManager {
         SIM7600& simModule;
         std::vector<String> splitString(const char *data, char delimiter);
         Utils utils;
+        float lastValidCourse = 0.0;
 
     public:
         GpsManager(SIM7600& SIM7600);

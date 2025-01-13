@@ -11,7 +11,7 @@ private:
   bool isAllowedCommand(const String& command);
   int commandType(const String& command);
 
-  static const char* allowedCommands[35];
+  static const char* allowedCommands[37];
 public:
   SIM7600(HardwareSerial& serial);
   void begin();

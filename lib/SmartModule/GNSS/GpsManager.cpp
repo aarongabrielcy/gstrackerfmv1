@@ -40,7 +40,7 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
 
     if (tokens.size() >= 16) {
         gpsData.mode = tokens[0].toInt();
-        gpsData.gps_svs = tokens[1].toInt();
+        gpsData.gps_svs =  !tokens[1].isEmpty() ? tokens[1].toInt() : 0;
         gpsData.glonass_svs = tokens[2].toInt();
         gpsData.beidou_svs = tokens[3].toInt();
         gpsData.latitude = tokens[4].toDouble();
@@ -51,10 +51,21 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
         gpsData.utc_time = utils.formatTime(tokens[9]);
         gpsData.altitude = tokens[10].toFloat();
         gpsData.speed = tokens[11].toFloat();
+        //gpsData.speed = tokens[11].toFloat();
+        if (!tokens[11].isEmpty()) {
+            gpsData.speed = tokens[11].toFloat() * 1.85;
+        }
         gpsData.course = tokens[12].toFloat();
+        /*if (!tokens[12].isEmpty()) {
+        float parsedCourse = tokens[12].toFloat();
+        gpsData.course = (parsedCourse > 0) ? lastValidCourse = parsedCourse : lastValidCourse;
+        } else {
+        gpsData.course = lastValidCourse; // Usa el último valor válido si el campo está vacío
+        }*/
         gpsData.pdop = tokens[13].toFloat();
         gpsData.hdop = tokens[14].toFloat();
         gpsData.vdop = tokens[15].toFloat();
+
     }
     return gpsData;
 }
