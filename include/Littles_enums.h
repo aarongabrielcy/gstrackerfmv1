@@ -15,14 +15,16 @@ enum cmdType {
   UNKNOWN = -1
 };
 enum AlertId {
-  IGN_ON    = 33, 
-  IGN_OFF   = 34,   
-  POWER_ON  = 40,
-  POWER_OFF = 41,
-  BATT_ON   = 44,
-  BATT_OFF  = 45,
-  IN_1_ON   = 11,
-  IN_1_OFF  = 12,
-  PANIC_BTN = 42,
+  IGNITON_ON        = 33, 
+  IGNITON_OFF       = 34,   
+  POWER_CONNECTED   = 40,
+  POWER_DISCONECTED = 41,
+  BATTERY_CONNECTED = 44,
+  BATT_DISCONECTED  = 45,
+  INPUT_HIGH        = 11,
+  INPUT_LOW         = 12,
+  SHOCKED           = 15,
+  CRASH_DETECTED    = 16,
+  PANIC_BUTTON      = 42,
 };
 #endif

@@ -40,7 +40,7 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
 
     if (tokens.size() >= 16) {
         gpsData.mode = tokens[0].toInt();
-        gpsData.gps_svs =  !tokens[1].isEmpty() ? tokens[1].toInt() : 0;
+        gpsData.gps_svs = tokens[1].toInt();
         gpsData.glonass_svs = tokens[2].toInt();
         gpsData.beidou_svs = tokens[3].toInt();
         gpsData.latitude = tokens[4].toDouble();
@@ -55,7 +55,7 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
         if (!tokens[11].isEmpty()) {
             gpsData.speed = tokens[11].toFloat() * 1.85;
         }
-        gpsData.course = tokens[12].toFloat();
+        gpsData.course = !tokens[12].isEmpty() ? tokens[12].toFloat(): 0.0;
         /*if (!tokens[12].isEmpty()) {
         float parsedCourse = tokens[12].toFloat();
         gpsData.course = (parsedCourse > 0) ? lastValidCourse = parsedCourse : lastValidCourse;

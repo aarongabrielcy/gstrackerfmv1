@@ -13,9 +13,9 @@
 #define GNSS_LED_PIN  19
 #define POWER_LED_PIN 20
 #define SIM_DTR_PIN   42
-#define INPUT_IGN   10   
-
-
+#define INPUT_IGN     10   
+#define ADC_IN_POWER   8
+#define ADC_IN_BATTERY 9
 #define DEFAULT_SVR "34.196.135.179"
 #define DEFAULT_PORT 5200
 

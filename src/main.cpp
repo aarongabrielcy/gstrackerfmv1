@@ -8,6 +8,7 @@
 #include "GNSS/GpsManager.h"
 #include "TCP/ReadToSendData.h"
 #include "SimModule/Information.h"
+//#include "PowerSupply/AdcInputs.h"
 
 SIM7600 simModule(Serial1);
 PwModule pwModule;
@@ -15,6 +16,7 @@ NetManager netManager(simModule);
 GpsManager gpsManager(simModule);
 ReadToSendData readToSendData(simModule);
 Information information(simModule);
+//AdcInputs adcInputs;
 Utils utils;
 
 unsigned long lastPrintTime = 0; // Tiempo del último envío
@@ -69,7 +71,6 @@ void loop() {
   GpsManager::GPSData gpsParseData = gpsManager.parse(GNSSData.c_str());
   pwModule.getStateIgn() ? ignState = 0 : ignState = 1;
   ignition_event(gpsParseData);
-
   if(!fix ){
     datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
       latitude = last_valid_latitude;
@@ -81,9 +82,11 @@ void loop() {
     last_valid_latitude = latitude;
     last_valid_longitude = longitude;
   }
-
+  /*float battery = adcInputs.getBattValue(); 
+  float power = adcInputs.getPowerValue();*/
+  
   message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+";103682809;334;020;40C6;20;"+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+
-            gpsParseData.course+DLM+gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929;4.1;14.19";
+            gpsParseData.course+DLM+gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+"4.1;14.19";
   heart_beat = String(Headers::ALV)+DLM+imei;
   
   if (checkSignificantCourseChange(gpsParseData.course) && ignState == 1) {
@@ -97,6 +100,7 @@ void loop() {
     lastPrintTime = currentTime;
     Serial.println("DATA =>"+message);
     Serial.println("RAWDATA => " +GNSSData );
+  Serial.println("SATELLITES => "+ gpsParseData.gps_svs);
     readToSendData.sendData(message, 1000);
   }
   unsigned long current_time = millis();
@@ -151,12 +155,12 @@ void ignition_event(GpsManager::GPSData gpsData) {
   if (StateIgnition == LOW && LaststateIgnition == HIGH) {
     Serial.println("*** ¡ignition ON! **** ");
 
-    event_generated(gpsData, IGN_ON);
+    event_generated(gpsData, IGNITON_ON);
     
   }else if(StateIgnition == HIGH && LaststateIgnition == LOW) {
     Serial.println("**** ¡ignition OFF! ***** ");
 
-    event_generated(gpsData, IGN_OFF);
+    event_generated(gpsData, IGNITON_OFF);
   }
   LaststateIgnition = StateIgnition;
 }
