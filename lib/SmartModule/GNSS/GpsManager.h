@@ -5,6 +5,7 @@
 #include "SimModule/SIM7600.h"
 #include <vector>
 #include "Utils.h"
+#include <string>
 
 class GpsManager {
     private:

@@ -50,8 +50,7 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
         gpsData.date = utils.formatDate(tokens[8]);
         gpsData.utc_time = utils.formatTime(tokens[9]);
         gpsData.altitude = tokens[10].toFloat();
-        gpsData.speed = tokens[11].toFloat();
-        //gpsData.speed = tokens[11].toFloat();
+       //gpsData.speed = tokens[11].toFloat();
         if (!tokens[11].isEmpty()) {
             gpsData.speed = tokens[11].toFloat() * 1.85;
         }
