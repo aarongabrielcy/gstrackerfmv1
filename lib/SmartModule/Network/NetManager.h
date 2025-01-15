@@ -14,5 +14,6 @@ class NetManager {
         void configTcpServer(const String& server, int port);
         bool initializeModule();
         String getDateTime();
+        bool tcpServiceStatus();
 };
 #endif
