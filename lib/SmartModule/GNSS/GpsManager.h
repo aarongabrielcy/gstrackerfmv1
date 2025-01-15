@@ -20,12 +20,12 @@ class GpsManager {
         void confiGpsReports(int interval);
         struct GPSData {
         int mode;
-        int gps_svs;
+        int gps_svs = 0;
         int glonass_svs;
         int beidou_svs;
-        double latitude;
+        double latitude = 0.00;
         char ns_indicator;
-        double longitude;
+        double longitude = 0.00;
         char ew_indicator;
         String date;
         String utc_time;

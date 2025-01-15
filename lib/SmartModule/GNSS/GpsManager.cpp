@@ -43,9 +43,11 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
         gpsData.gps_svs = tokens[1].toInt();
         gpsData.glonass_svs = tokens[2].toInt();
         gpsData.beidou_svs = tokens[3].toInt();
-        gpsData.latitude = tokens[4].toDouble();
+        //gpsData.latitude = tokens[4].toDouble();
+        gpsData.latitude = !tokens[4].isEmpty() ? tokens[4].toDouble(): 0.00;
         gpsData.ns_indicator = tokens[5][0];
-        gpsData.longitude = tokens[6].toDouble();
+        //gpsData.longitude = tokens[6].toDouble();
+        gpsData.longitude = !tokens[6].isEmpty() ? tokens[6].toDouble(): 0.00;
         gpsData.ew_indicator = tokens[7][0];
         gpsData.date = utils.formatDate(tokens[8]);
         gpsData.utc_time = utils.formatTime(tokens[9]);

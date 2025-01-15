@@ -9,6 +9,7 @@
 #include "TCP/ReadToSendData.h"
 #include "SimModule/Information.h"
 #include "PowerSupply/AdcInputs.h"
+#include "GPRS/Registration.h"
 
 SIM7600 simModule(Serial1);
 PwModule pwModule;
@@ -16,6 +17,7 @@ NetManager netManager(simModule);
 GpsManager gpsManager(simModule);
 ReadToSendData readToSendData(simModule);
 Information information(simModule);
+Registration registration(simModule);
 AdcInputs adcInputs;
 Utils utils;
 
@@ -37,12 +39,12 @@ String message;
 String heart_beat;
 String imei;
 String datetime; 
-String latitude;
-String longitude;
-String last_valid_latitude;
-String last_valid_longitude;
+String latitude = "0.0", longitude = "0.0"; // Coordenadas como String
+String last_valid_latitude = "0.0", last_valid_longitude = "0.0"; // Últimas coordenadas válidas como String
+double distanceAccumulated = 0.0; // Distancia acumulada
 
 void handleSerialInput();
+double calculateHaversine(double lat1, double lon1, double lat2, double lon2);
 bool checkSignificantCourseChange(float currentCourse);
 void ignition_event(GpsManager::GPSData gpsData);
 void event_generated(GpsManager::GPSData gpsData, int event);
@@ -56,6 +58,10 @@ void setup() {
   pwModule.powerLedGnss();
   simModule.begin();
   do { Serial.println("Inicializando Modulo..."); } while(!netManager.initializeModule());
+  registration.networkRegistration();
+  do { Serial.println("Registrando red ..."); registration.networkRegistration();} while (!registration.netRegistrationState());
+  
+  
   imei = information.getDevID();
   netManager.activeTcpService();
   gpsManager.activeGps(1);
@@ -67,20 +73,39 @@ void setup() {
 void loop() {
   handleSerialInput();
   GNSSData = simModule.sendReadDataToGNSS(1000);
-  GNSSData == ",,,,,,,,,,,,,,," ? fix = 0 : fix = 1;   
+  //GNSSData == ",,,,,,,,,,,,,,," ? fix = 0 : fix = 1;   
+  fix = GNSSData != ",,,,,,,,,,,,,,,";
   GpsManager::GPSData gpsParseData = gpsManager.parse(GNSSData.c_str());
   pwModule.getStateIgn() ? ignState = 0 : ignState = 1;
   ignition_event(gpsParseData);
-  if(!fix ){
-    datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
-      latitude = last_valid_latitude;
-      longitude = last_valid_longitude;
-  }else{
-    datetime = gpsParseData.date+DLM+gpsParseData.utc_time;
-    latitude = utils.formatCoordinates(gpsParseData.latitude, gpsParseData.ns_indicator);
-    longitude = utils.formatCoordinates(gpsParseData.longitude, gpsParseData.ew_indicator);
-    last_valid_latitude = latitude;
-    last_valid_longitude = longitude;
+  if (fix) {
+        // Calcular la distancia desde la última posición válida
+        double currentDistance = calculateHaversine(
+            atof(last_valid_latitude.c_str()), atof(last_valid_longitude.c_str()), 
+            gpsParseData.latitude, gpsParseData.longitude
+        );
+        // Acumular la distancia recorrida
+        distanceAccumulated += currentDistance;
+
+        // Verificar si se alcanzaron 100 metros
+        if (distanceAccumulated >= 150.0 && ignState == 0 && gpsParseData.speed > 20) {
+            Serial.println("Distancia recorrida >= 100m. Enviando datos...");
+            readToSendData.sendData(message, 1000);
+            distanceAccumulated = 0.0; // Reiniciar la distancia acumulada
+        }
+        datetime = gpsParseData.date+DLM+gpsParseData.utc_time;
+        // Formatear las coordenadas para enviarlas en el mensaje
+        latitude = utils.formatCoordinates(gpsParseData.latitude, gpsParseData.ns_indicator);
+        longitude = utils.formatCoordinates(gpsParseData.longitude, gpsParseData.ew_indicator);
+        // Actualizar las últimas coordenadas válidas en formato String
+        last_valid_latitude = latitude;
+        last_valid_longitude = longitude;
+
+    } else {
+        datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
+        // Usar las últimas coordenadas válidas si no hay fix
+        latitude = last_valid_latitude;
+        longitude = last_valid_longitude;
   }
   float battery = adcInputs.getBattValue(); 
   float power = adcInputs.getPowerValue();
@@ -91,7 +116,10 @@ void loop() {
   
   if (checkSignificantCourseChange(gpsParseData.course) && ignState == 1) {
     Serial.print(" Envío en curva = >");
-    readToSendData.sendData(message, 1000);
+    if(!readToSendData.sendData(message, 1000)) {
+      Serial.println("TRACKEO POR CURVA NO ENVIADO");
+      void reconectServer();
+    }
     return; 
   }
 
@@ -100,7 +128,11 @@ void loop() {
     lastPrintTime = currentTime;
     Serial.println("DATA =>"+message);
     Serial.println("RAWDATA => " +GNSSData );
-    readToSendData.sendData(message, 1000);
+    if(!readToSendData.sendData(message, 1000)) {
+      //OMITIR EN LA FUNCION sendResposeCommand "+CGNSSINFO: ,,,,,,,,,,,,,,,"
+      Serial.println("TRACKEO POR TIEMPO NO ENVIADO");
+      void reconectServer();
+    }
   }
   unsigned long current_time = millis();
   if(current_time - previous_time_send >= sendDataTimeout && ignState == 0) {
@@ -171,7 +203,15 @@ void event_generated(GpsManager::GPSData gpsData, int event) {
     Serial.println("Event => "+ data_event);
     readToSendData.sendData(data_event, 2000);
 }
-
+double calculateHaversine(double lat1, double lon1, double lat2, double lon2) {
+    const double R = 6371000; // Radio de la Tierra en metros
+    double dLat = radians(lat2 - lat1);
+    double dLon = radians(lon2 - lon1);
+    double a = sin(dLat / 2) * sin(dLat / 2) +
+               cos(radians(lat1)) * cos(radians(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return R * c; // Distancia en metros
+}
 void reconectServer() {
   netManager.activeTcpService();
   netManager.configTcpServer(DEFAULT_SVR, DEFAULT_PORT);

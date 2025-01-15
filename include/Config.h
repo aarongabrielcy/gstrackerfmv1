@@ -20,8 +20,8 @@
 #define DEFAULT_PORT 5200
 
 #define SEND_DATA_TIMEOUT 1000
-#define SEND_DATA_ING_OFF 600000 //5 minutos = 300000 ms //20 minutos = 1200000 ms
-#define SEND_DATA_HEART_BEAT 588000 // 19.8  Minutos = 1188000 ms
+#define SEND_DATA_ING_OFF 960000 //5 minutos = 300000 ms //20 minutos = 1200000 ms
+#define SEND_DATA_HEART_BEAT 948000 // 19.8  Minutos = 1188000 ms
 //Static values
 struct Headers {
     static constexpr const char *STT = "STT";

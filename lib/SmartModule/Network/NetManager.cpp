@@ -23,6 +23,12 @@ void NetManager::configTcpServer(const String& server, int port) {
     String cip_cmd = "AT+CIPOPEN=0,\"TCP\",\"" + server + "\"," +port;
      String cip = simModule.sendCommandWithResponse(cip_cmd.c_str(), 3000);
 }
+bool NetManager::tcpServiceStatus() {
+    String netstatus_cmd = "AT+NETOPEN?";
+    String netstatus = simModule.sendCommandWithResponse(netstatus_cmd.c_str(), 3000);
+    Serial.println("STATE TCP SERVICE => " + netstatus);
+    return true;
+}
 String NetManager::getDateTime() {
   String dt_cmd = "AT+CCLK?";
     String dt = simModule.sendCommandWithResponse(dt_cmd.c_str(), 1000);
