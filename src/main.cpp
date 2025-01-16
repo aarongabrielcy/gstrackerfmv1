@@ -85,29 +85,27 @@ void loop() {
   CellularAnt::CellularData cellParseData = cellularAnt.parse(CellData.c_str());
 
   pwModule.getStateIgn() ? ignState = 0 : ignState = 1;
-  ignition_event(cellParseData, gpsParseData);
   if (fix) {
-        // Calcular la distancia desde la última posición válida
-        double currentDistance = calculateHaversine(
-            atof(last_valid_latitude.c_str()), atof(last_valid_longitude.c_str()), 
-            gpsParseData.latitude, gpsParseData.longitude
-        );
+    // Calcular la distancia desde la última posición válida
+    double currentDistance = calculateHaversine(
+      atof(last_valid_latitude.c_str()), atof(last_valid_longitude.c_str()), 
+      gpsParseData.latitude, gpsParseData.longitude );
         // Acumular la distancia recorrida
-        distanceAccumulated += currentDistance;
+      distanceAccumulated += currentDistance;
 
         // Verificar si se alcanzaron 100 metros
-        if (distanceAccumulated >= 150.0 && ignState == 0 && gpsParseData.speed > 20) {
-            Serial.println("Distancia recorrida >= 100m. Enviando datos...");
-            readToSendData.sendData(message, 1000);
-            distanceAccumulated = 0.0; // Reiniciar la distancia acumulada
-        }
-        datetime = gpsParseData.date+DLM+gpsParseData.utc_time;
-        // Formatear las coordenadas para enviarlas en el mensaje
-        latitude = utils.formatCoordinates(gpsParseData.latitude, gpsParseData.ns_indicator);
-        longitude = utils.formatCoordinates(gpsParseData.longitude, gpsParseData.ew_indicator);
-        // Actualizar las últimas coordenadas válidas en formato String
-        last_valid_latitude = latitude;
-        last_valid_longitude = longitude;
+      if (distanceAccumulated >= 150.0 && ignState == 0 && gpsParseData.speed > 20) {
+        Serial.println("Distancia recorrida >= 100m. Enviando datos...");
+        readToSendData.sendData(message, 1000);
+        distanceAccumulated = 0.0; // Reiniciar la distancia acumulada
+      }
+      datetime = gpsParseData.date+DLM+gpsParseData.utc_time;
+      // Formatear las coordenadas para enviarlas en el mensaje
+      latitude = utils.formatCoordinates(gpsParseData.latitude, gpsParseData.ns_indicator);
+      longitude = utils.formatCoordinates(gpsParseData.longitude, gpsParseData.ew_indicator);
+      // Actualizar las últimas coordenadas válidas en formato String
+      last_valid_latitude = latitude;
+      last_valid_longitude = longitude;
 
     } else {
         datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
@@ -115,6 +113,7 @@ void loop() {
         latitude = last_valid_latitude;
         longitude = last_valid_longitude;
   }
+  ignition_event(cellParseData, gpsParseData);
   float battery = adcInputs.getBattValue(); 
   float power = adcInputs.getPowerValue();
   
