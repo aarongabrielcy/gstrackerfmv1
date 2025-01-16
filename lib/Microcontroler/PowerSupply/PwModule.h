@@ -1,5 +1,5 @@
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef PWMODULE_H
+#define PWMODULE_H
 
 #include <Arduino.h>
 #include "Config.h"

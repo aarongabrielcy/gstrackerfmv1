@@ -56,7 +56,7 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
         if (!tokens[11].isEmpty()) {
             gpsData.speed = tokens[11].toFloat() * 1.85;
         }
-        gpsData.course = !tokens[12].isEmpty() ? tokens[12].toFloat(): 0.0;
+        gpsData.course = !tokens[12].isEmpty() ? tokens[12].toFloat(): 0.1;
         /*if (!tokens[12].isEmpty()) {
         float parsedCourse = tokens[12].toFloat();
         gpsData.course = (parsedCourse > 0) ? lastValidCourse = parsedCourse : lastValidCourse;

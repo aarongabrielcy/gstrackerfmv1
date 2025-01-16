@@ -30,8 +30,8 @@ class GpsManager {
         String date;
         String utc_time;
         float altitude;
-        float speed;
-        float course;
+        float speed = 0.00;
+        float course = 0.00;
         float pdop;
         float hdop;
         float vdop;

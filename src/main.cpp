@@ -10,6 +10,7 @@
 #include "SimModule/Information.h"
 #include "PowerSupply/AdcInputs.h"
 #include "GPRS/Registration.h"
+#include "GPRS/CellularAnt.h"
 
 SIM7600 simModule(Serial1);
 PwModule pwModule;
@@ -18,6 +19,7 @@ GpsManager gpsManager(simModule);
 ReadToSendData readToSendData(simModule);
 Information information(simModule);
 Registration registration(simModule);
+CellularAnt cellularAnt(simModule);
 AdcInputs adcInputs;
 Utils utils;
 
@@ -29,11 +31,13 @@ bool LaststateIgnition = HIGH;
 
 unsigned long previous_time_send = 0;
 unsigned long previous_time_ign_off = 0;
-const unsigned long sendDataTimeout = SEND_DATA_HEART_BEAT;
-const unsigned long sendDataIgnOff = SEND_DATA_ING_OFF;
+const unsigned long sendDataTimeout = 1788000;
+const unsigned long sendDataIgnOff = 1800000;
 
 bool fix;
 String GNSSData;
+String CellData;
+
 bool ignState;
 String message;
 String heart_beat;
@@ -46,8 +50,8 @@ double distanceAccumulated = 0.0; // Distancia acumulada
 void handleSerialInput();
 double calculateHaversine(double lat1, double lon1, double lat2, double lon2);
 bool checkSignificantCourseChange(float currentCourse);
-void ignition_event(GpsManager::GPSData gpsData);
-void event_generated(GpsManager::GPSData gpsData, int event);
+void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData);
+void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
 void reconectServer();
 
 void setup() {
@@ -57,7 +61,8 @@ void setup() {
   pwModule.powerKey();
   pwModule.powerLedGnss();
   simModule.begin();
-  do { Serial.println("Inicializando Modulo..."); } while(!netManager.initializeModule());
+
+  do { Serial.println("Inicializando Modulo..."); gpsManager.confiGpsReports(0); } while(!netManager.initializeModule());
   registration.networkRegistration();
   do { Serial.println("Registrando red ..."); registration.networkRegistration();} while (!registration.netRegistrationState());
   
@@ -73,11 +78,14 @@ void setup() {
 void loop() {
   handleSerialInput();
   GNSSData = simModule.sendReadDataToGNSS(1000);
-  //GNSSData == ",,,,,,,,,,,,,,," ? fix = 0 : fix = 1;   
+  CellData = cellularAnt.cellInformation(1500);
   fix = GNSSData != ",,,,,,,,,,,,,,,";
+  
   GpsManager::GPSData gpsParseData = gpsManager.parse(GNSSData.c_str());
+  CellularAnt::CellularData cellParseData = cellularAnt.parse(CellData.c_str());
+
   pwModule.getStateIgn() ? ignState = 0 : ignState = 1;
-  ignition_event(gpsParseData);
+  ignition_event(cellParseData, gpsParseData);
   if (fix) {
         // Calcular la distancia desde la última posición válida
         double currentDistance = calculateHaversine(
@@ -109,9 +117,10 @@ void loop() {
   }
   float battery = adcInputs.getBattValue(); 
   float power = adcInputs.getPowerValue();
-
-  message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+";103682809;334;020;40C6;20;"+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+
-            gpsParseData.course+DLM+gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
+  
+  message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
+            DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
+            gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
   heart_beat = String(Headers::ALV)+DLM+imei;
   
   if (checkSignificantCourseChange(gpsParseData.course) && ignState == 1) {
@@ -127,7 +136,7 @@ void loop() {
   if (currentTime - lastPrintTime >= interval && ignState == 1) {
     lastPrintTime = currentTime;
     Serial.println("DATA =>"+message);
-    Serial.println("RAWDATA => " +GNSSData );
+    Serial.println("RAWDATA => " +CellData );
     if(!readToSendData.sendData(message, 1000)) {
       //OMITIR EN LA FUNCION sendResposeCommand "+CGNSSINFO: ,,,,,,,,,,,,,,,"
       Serial.println("TRACKEO POR TIEMPO NO ENVIADO");
@@ -181,25 +190,26 @@ bool checkSignificantCourseChange(float currentCourse) {
   //previousCourse = currentCourse;  // Actualizar de todos modos para la próxima comparación
   return false;
 }
-void ignition_event(GpsManager::GPSData gpsData) {
+void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData) {
   int StateIgnition = pwModule.getStateIgn();
   if (StateIgnition == LOW && LaststateIgnition == HIGH) {
     Serial.println("*** ¡ignition ON! **** ");
 
-    event_generated(gpsData, IGNITON_ON);
+    event_generated(cellData, gpsData, IGNITON_ON);
     
   }else if(StateIgnition == HIGH && LaststateIgnition == LOW) {
     Serial.println("**** ¡ignition OFF! ***** ");
 
-    event_generated(gpsData, IGNITON_OFF);
+    event_generated(cellData, gpsData, IGNITON_OFF);
   }
   LaststateIgnition = StateIgnition;
 }
-void event_generated(GpsManager::GPSData gpsData, int event) {
+void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event) {
 
   String data_event = "";
-    data_event = String(Headers::ALT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+";103682809;334;020;40C6;20;"+latitude+DLM+longitude+DLM+gpsData.speed+DLM+
-                 gpsData.course+DLM+gpsData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;"+event+";;";
+  data_event = String(Headers::ALT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellData.cellId+DLM+cellData.mcc+
+                DLM+cellData.mnc+DLM+cellData.lac+DLM+cellData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsData.speed+
+                DLM+gpsData.course+DLM+gpsData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;"+event+";;";
     Serial.println("Event => "+ data_event);
     readToSendData.sendData(data_event, 2000);
 }
