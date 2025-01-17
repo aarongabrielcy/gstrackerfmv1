@@ -64,8 +64,8 @@ void setup() {
 
   do { Serial.println("Inicializando Modulo..."); gpsManager.confiGpsReports(0); } while(!netManager.initializeModule());
   registration.networkRegistration();
-  do { Serial.println("Registrando red ..."); registration.networkRegistration();} while (!registration.netRegistrationState());
-  
+  do { Serial.println("conectado a la red local ..."); } while (!registration.netRegistrationState());
+  do { Serial.println("conectado a la red celular ...");} while (!registration.networkRegistration());
   
   imei = information.getDevID();
   netManager.activeTcpService();
