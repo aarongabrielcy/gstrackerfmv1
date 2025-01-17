@@ -46,13 +46,13 @@ String datetime;
 String latitude = "0.0", longitude = "0.0"; // Coordenadas como String
 String last_valid_latitude = "0.0", last_valid_longitude = "0.0"; // Últimas coordenadas válidas como String
 double distanceAccumulated = 0.0; // Distancia acumulada
-
+int reconectCounter = 0;
 void handleSerialInput();
 double calculateHaversine(double lat1, double lon1, double lat2, double lon2);
 bool checkSignificantCourseChange(float currentCourse);
 void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData);
 void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
-void reconectServer();
+void reconectServices();
 
 void setup() {
 
@@ -126,7 +126,7 @@ void loop() {
     Serial.print(" Envío en curva = >");
     if(!readToSendData.sendData(message, 1000)) {
       Serial.println("TRACKEO POR CURVA NO ENVIADO");
-      void reconectServer();
+      void reconectServices();
     }
     return; 
   }
@@ -139,7 +139,7 @@ void loop() {
     if(!readToSendData.sendData(message, 1000)) {
       //OMITIR EN LA FUNCION sendResposeCommand "+CGNSSINFO: ,,,,,,,,,,,,,,,"
       Serial.println("TRACKEO POR TIEMPO NO ENVIADO");
-      void reconectServer();
+      void reconectServices();
     }
   }
   unsigned long current_time = millis();
@@ -149,7 +149,7 @@ void loop() {
     Serial.println("tiempo transcurrido ACTIVAR HEART BEAT => "); 
     if(!readToSendData.sendData(heart_beat, 1000)) {
       Serial.println("HEART BEAT NO ENVIADO");
-      void reconectServer();
+      void reconectServices();
     }
   }
   if(current_time - previous_time_ign_off >= sendDataIgnOff && ignState == 0) {
@@ -158,7 +158,7 @@ void loop() {
     Serial.println("tiempo transcurrido con motor apagado => "); 
     if(!readToSendData.sendData(message, 1000)) {
       Serial.println("Mensaje con el motor apagado no enviado");
-      void reconectServer();
+      void reconectServices();
     }
   }
   pwModule.blinkLedGnss(fix);
@@ -221,7 +221,15 @@ double calculateHaversine(double lat1, double lon1, double lat2, double lon2) {
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return R * c; // Distancia en metros
 }
-void reconectServer() {
+void reconectServices() {
+  registration.networkRegistration();
   netManager.activeTcpService();
   netManager.configTcpServer(DEFAULT_SVR, DEFAULT_PORT);
+  reconectCounter++;
+
+  if (reconectCounter == 10) {
+    Serial.println("La función reconectServices() se ha ejecutado 10 veces.");
+    registration.softReset();
+    reconectCounter = 0; // Reiniciar el contador después de alcanzar 10
+  }
 }

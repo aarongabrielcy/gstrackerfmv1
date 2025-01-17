@@ -1,7 +1,7 @@
 #include "SIM7600.h"
 
-const char* SIM7600::allowedCommands[40] = {
-    "AT","D0","D1", "D2", "F", "W", "CTZR", "CFUN", "CGDCONT","CGDSCONT","COPS", "CSQ", "NETOPEN", "CIPOPEN", "CIPSEND", "CIPCLOSE", "CIPMODE", "CGACT", "SIMEI", "CCID", "CPSI", "CNMP", "CNSMOD",  "CCLK", "CTZU", "CGPS", "CGPSINFO", "CGPSCOLD", "CGPSHOT", "CGNSSINFO", "CREG", "CGPADDR","CGPSNMEA","CMEE","CPIN", "CSPN", "CSCLK", "CBC", "CPMUTEMP", "CNAOP"
+const char* SIM7600::allowedCommands[42] = {
+    "AT","D0","D1", "D2", "F", "W", "CTZR", "CFUN", "NETCLOSE", "CGDCONT","CGDSCONT","COPS", "CSQ", "NETOPEN", "CIPOPEN", "CIPSEND", "CIPCLOSE", "CIPMODE", "CGACT", "SIMEI", "CCID", "CPSI", "CNMP", "CNSMOD",  "CCLK", "CTZU", "CGPS", "CGPSINFO", "CGPSCOLD", "CGPSHOT", "CGNSSINFO", "CREG", "CGPADDR","CGPSNMEA","CMEE","CPIN", "CSPN", "CSCLK", "CBC", "CPMUTEMP", "CNAOP", "CGREG"
 };
 
 // Constructor
