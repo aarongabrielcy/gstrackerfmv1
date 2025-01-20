@@ -2,6 +2,15 @@
 
 GpsManager::GpsManager(SIM7600& sim7600) : simModule(sim7600) {}
 
+bool GpsManager::stateGps() {
+    String state_cmd = "AT+CGPS?";
+    String state = simModule.sendCommandWithResponse(state_cmd.c_str(), 3000);
+    Serial.println(state_cmd+" => "+ state);
+    if(state == "0,1OK") {
+        return true;
+    }
+    return false;
+}
 void GpsManager::activeGps(int state) {
     String cgps_cmd = "AT+CGPS="+String(state);
     String cgps = simModule.sendCommandWithResponse(cgps_cmd.c_str(), 3000);

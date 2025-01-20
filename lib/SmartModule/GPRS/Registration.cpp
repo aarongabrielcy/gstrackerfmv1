@@ -26,6 +26,7 @@ bool Registration::networkRegistration() {
     }
     return false;
 }
+
 void Registration::softReset() {
   String cfunr_cmd = "AT+CFUN=1,1";
   String cfunr = simModule.sendCommandWithResponse(cfunr_cmd.c_str(), 4000);

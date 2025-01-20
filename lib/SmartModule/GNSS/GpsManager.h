@@ -16,6 +16,7 @@ class GpsManager {
 
     public:
         GpsManager(SIM7600& SIM7600);
+        bool stateGps();
         void activeGps(int state);
         void confiGpsReports(int interval);
         struct GPSData {

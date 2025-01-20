@@ -54,6 +54,7 @@ void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsD
 void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
 void reconectServices();
 void reconectGps();
+
 void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE);
@@ -108,6 +109,11 @@ void loop() {
       last_valid_longitude = longitude;
 
     } else {
+        if(!gpsManager.stateGps()) {
+          gpsManager.confiGpsReports(0);
+          Serial.println("Activando GPS... ");
+          reconectGps();
+        }
         datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
         // Usar las últimas coordenadas válidas si no hay fix
         latitude = last_valid_latitude;
@@ -117,9 +123,15 @@ void loop() {
   float battery = adcInputs.getBattValue(); 
   float power = adcInputs.getPowerValue();
   
-  message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
+  if(gpsParseData.speed <= 3) {
+    message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
+            DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+last_valid_latitude+DLM+last_valid_longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
+            gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
+  }else{
+    message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
             DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
             gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
+  }
   heart_beat = String(Headers::ALV)+DLM+imei;
   
   if (checkSignificantCourseChange(gpsParseData.course) && ignState == 1) {
