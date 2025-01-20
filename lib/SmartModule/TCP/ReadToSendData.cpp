@@ -12,6 +12,7 @@ bool ReadToSendData::sendData(String message, int timeout) {
   
   if (response.indexOf(">") != -1) {
     String respServer = simModule.sendReadDataToServer("CIPSEND", message, timeout); // Envía el mensaje   
+    respServer = utils.cleanDelimiter(respServer, "+CGNSSINFO: ");
     Serial.println("Respuesta procesada => " + respServer);
     String respCMD = readData(respServer, timeout);
     Serial.println("Comando recibido =>"+respCMD);

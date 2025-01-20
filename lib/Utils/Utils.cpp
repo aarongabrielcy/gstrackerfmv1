@@ -121,3 +121,12 @@ String Utils::getPositionData(String data,int position) {
 
     return "";
 }
+
+String Utils::cleanDelimiter(String str, const String &substring) {
+    int index = str.indexOf(substring);  // Busca la subcadena
+    if (index != -1) {  // Si se encuentra
+        // Corta la cadena hasta la posición encontrada
+        str = str.substring(0, index);  
+    }
+    return str;
+}

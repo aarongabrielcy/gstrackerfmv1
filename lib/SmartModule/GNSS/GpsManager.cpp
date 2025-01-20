@@ -5,8 +5,11 @@ GpsManager::GpsManager(SIM7600& sim7600) : simModule(sim7600) {}
 bool GpsManager::stateGps() {
     String state_cmd = "AT+CGPS?";
     String state = simModule.sendCommandWithResponse(state_cmd.c_str(), 3000);
-    Serial.println(state_cmd+" => "+ state);
-    if(state == "0,1OK") {
+    state = utils.cleanDelimiter(state, "+CGNSSINFO: ");
+    //Serial.println(state_cmd+" => "+ state);
+    if(state == "1,1OK") {
+        return true;
+    }else if( state == "1,1") {
         return true;
     }
     return false;
