@@ -124,16 +124,11 @@ void loop() {
   ignition_event(cellParseData, gpsParseData);
   float battery = adcInputs.getBattValue(); 
   float power = adcInputs.getPowerValue();
+
+    message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
+    DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
+    gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;  
   
-  if(gpsParseData.speed <= 3 && fix) {
-    message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
-            DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+last_valid_latitude+DLM+last_valid_longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
-            gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
-  }else {
-    message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
-            DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
-            gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
-  }
   heart_beat = String(Headers::ALV)+DLM+imei;
   
   if (checkSignificantCourseChange(gpsParseData.course) && ignState == 1) {
@@ -182,7 +177,7 @@ void handleSerialInput() {
     String command = Serial.readStringUntil('\n');
     String response = simModule.sendCommandWithResponse(command.c_str(), AT_COMMAND_TIMEOUT);
     Serial.print("CLEAN RSP |=> ");
-    Serial.println(utils.cleanDelimiter(response, "+CGNSSINFO: "));
+    Serial.println(response);
   }
 }
 bool checkSignificantCourseChange(float currentCourse) {

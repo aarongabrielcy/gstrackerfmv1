@@ -6,13 +6,20 @@ bool GpsManager::stateGps() {
     String state_cmd = "AT+CGPS?";
     String state = simModule.sendCommandWithResponse(state_cmd.c_str(), 3000);
     state = utils.cleanDelimiter(state, "+CGNSSINFO: ");
-    //Serial.println(state_cmd+" => "+ state);
+    Serial.println(state_cmd+" =>"+state+"*");
     if(state == "1,1OK") {
+        Serial.println(state_cmd+"if:true"+ state);
         return true;
     }else if( state == "1,1") {
+        Serial.println(state_cmd+"else:true"+ state);
         return true;
     }
-    return false;
+    else if(state == "0,1OK") {
+        Serial.println(state_cmd+"if:true"+ state);
+        return false;
+    }
+    Serial.println(state_cmd+"false"+ state);
+    return true;
 }
 void GpsManager::activeGps(int state) {
     String cgps_cmd = "AT+CGPS="+String(state);
