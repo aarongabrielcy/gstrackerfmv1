@@ -53,7 +53,7 @@ bool checkSignificantCourseChange(float currentCourse);
 void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData);
 void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
 void reconectServices();
-
+void reconectGps();
 void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE);
@@ -126,7 +126,7 @@ void loop() {
     Serial.print(" Envío en curva = >");
     if(!readToSendData.sendData(message, 1000)) {
       Serial.println("TRACKEO POR CURVA NO ENVIADO");
-      void reconectServices();
+      reconectServices();
     }
     return; 
   }
@@ -139,7 +139,7 @@ void loop() {
     if(!readToSendData.sendData(message, 1000)) {
       //OMITIR EN LA FUNCION sendResposeCommand "+CGNSSINFO: ,,,,,,,,,,,,,,,"
       Serial.println("TRACKEO POR TIEMPO NO ENVIADO");
-      void reconectServices();
+      reconectServices();
     }
   }
   unsigned long current_time = millis();
@@ -149,7 +149,7 @@ void loop() {
     Serial.println("tiempo transcurrido ACTIVAR HEART BEAT => "); 
     if(!readToSendData.sendData(heart_beat, 1000)) {
       Serial.println("HEART BEAT NO ENVIADO");
-      void reconectServices();
+      reconectServices();
     }
   }
   if(current_time - previous_time_ign_off >= sendDataIgnOff && ignState == 0) {
@@ -158,7 +158,7 @@ void loop() {
     Serial.println("tiempo transcurrido con motor apagado => "); 
     if(!readToSendData.sendData(message, 1000)) {
       Serial.println("Mensaje con el motor apagado no enviado");
-      void reconectServices();
+      reconectServices();
     }
   }
   pwModule.blinkLedGnss(fix);
@@ -222,6 +222,8 @@ double calculateHaversine(double lat1, double lon1, double lat2, double lon2) {
     return R * c; // Distancia en metros
 }
 void reconectServices() {
+  //cuando reinicies el modulo activa el gps y gnssinfo de nuevo
+  Serial.println("Reconectando Servicios.. ");
   registration.networkRegistration();
   netManager.activeTcpService();
   netManager.configTcpServer(DEFAULT_SVR, DEFAULT_PORT);
@@ -232,4 +234,8 @@ void reconectServices() {
     registration.softReset();
     reconectCounter = 0; // Reiniciar el contador después de alcanzar 10
   }
+}
+void reconectGps() {
+  gpsManager.activeGps(1);
+  gpsManager.confiGpsReports(1);
 }

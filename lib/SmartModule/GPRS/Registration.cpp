@@ -24,6 +24,7 @@ bool Registration::networkRegistration() {
         //Serial.println("Reiniciando Modulo... ");
         return false;
     }
+    return false;
 }
 void Registration::softReset() {
   String cfunr_cmd = "AT+CFUN=1,1";
