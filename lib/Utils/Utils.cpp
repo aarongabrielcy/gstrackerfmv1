@@ -130,3 +130,11 @@ String Utils::cleanDelimiter(String str, const String &substring) {
     }
     return str;
 }
+
+String Utils::removePattern(String str, const String &pattern) {
+  int index;
+  while ((index = str.indexOf(pattern)) != -1) {  // Buscar el patrón
+    str.remove(index, pattern.length());         // Eliminar el patrón encontrado
+  }
+  return str;
+}

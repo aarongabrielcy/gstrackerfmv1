@@ -176,6 +176,7 @@ void handleSerialInput() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     String response = simModule.sendCommandWithResponse(command.c_str(), AT_COMMAND_TIMEOUT);
+      response = utils.removePattern(response, "+CGNSSINFO: ,,,,,,,,,,,,,,,");
     Serial.print("CLEAN RSP |=> ");
     Serial.println(response);
   }
@@ -242,5 +243,6 @@ void reconectServices() {
     Serial.println("La función reconectServices() se ha ejecutado 10 veces.");
     registration.softReset();
     reconectCounter = 0; // Reiniciar el contador después de alcanzar 10
+    fix = 0;
   }
 }

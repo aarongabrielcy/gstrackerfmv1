@@ -16,5 +16,7 @@ public:
     void blinkLedGnss(int fixState);
     void initInIgn(int pin);
     bool getStateIgn();
+    void OffModule();
+    void restartMicro();
 };
 #endif
