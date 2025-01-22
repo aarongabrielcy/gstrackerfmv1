@@ -21,7 +21,7 @@ bool Registration::networkRegistration() {
         Serial.println("Comando "+cgact_cmd+" enviado exitosamente");
         return true;
     }else if(cgact == "+CME ERROR: unknown") {
-        //Serial.println("Reiniciando Modulo... ");
+        Serial.println("Error:  "+ cgact);
         return false;
     }
     return false;
@@ -30,6 +30,6 @@ bool Registration::networkRegistration() {
 void Registration::softReset() {
   String cfunr_cmd = "AT+CFUN=1,1";
   String cfunr = simModule.sendCommandWithResponse(cfunr_cmd.c_str(), 4000);
-  Serial.println("Rsp CMD => "+cfunr);
+  Serial.println("CMD"+cfunr_cmd+"Rsp CMD => "+cfunr);
 
 }

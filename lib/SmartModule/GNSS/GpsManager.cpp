@@ -18,6 +18,10 @@ bool GpsManager::stateGps() {
         Serial.println(state_cmd+"=>RSP: "+ state);
         return false;
     }
+    else if(state == "0,1") {
+        Serial.println(state_cmd+"=>RSP: "+ state);
+        return false;
+    }
     //Serial.println(state_cmd+"false"+ state);
     return true;
 }
