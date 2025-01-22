@@ -18,7 +18,7 @@ public:
   String sendCommandWithResponse(const char* command, int timeout);
   String processResponse(const String& command, const String& fcommand, const String& response);
   String sendReadDataToServer(const String& fcommand, const String& message, int timeout);
-  String sendReadDataToGNSS(int timeout);
+  String readDataToGNSS(int timeout);
   Utils utils;
 };
 

@@ -78,10 +78,10 @@ void setup() {
 
 void loop() {
   handleSerialInput();
-  GNSSData = simModule.sendReadDataToGNSS(1000);
+  GNSSData = simModule.readDataToGNSS(1000);
   CellData = cellularAnt.cellInformation(1500);
-  fix = GNSSData != ",,,,,,,,,,,,,,,";
-  
+  //fix = GNSSData != ",,,,,,,,,,,,,,,";
+  GNSSData == ",,,,,,,,,,,,,,," || GNSSData == ""? fix = 0 : fix = 1;
   GpsManager::GPSData gpsParseData = gpsManager.parse(GNSSData.c_str());
   CellularAnt::CellularData cellParseData = cellularAnt.parse(CellData.c_str());
 
@@ -89,6 +89,11 @@ void loop() {
   
   
   if (fix) {
+    if(gpsState) { 
+      Serial.println("Activando reporte GNSS => ");
+      gpsManager.confiGpsReports(1);
+    }
+    gpsState = false;
     // Calcular la distancia desde la última posición válida
     double currentDistance = calculateHaversine(
       atof(last_valid_latitude.c_str()), atof(last_valid_longitude.c_str()), 
@@ -112,10 +117,10 @@ void loop() {
 
     } else {
         if(!gpsManager.stateGps() ) {
-          Serial.println("gps apagado encendiendo... ");
+          Serial.println("GPS APAGADO ~~~~~~~~~~~~~~~~ ");
           gpsManager.activeGps(1);
-        }
-        
+          gpsState = gpsManager.stateGps();
+        }    
         datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
         // Usar las últimas coordenadas válidas si no hay fix
         latitude = last_valid_latitude;
@@ -143,8 +148,8 @@ void loop() {
   unsigned long currentTime = millis();
   if (currentTime - lastPrintTime >= interval && ignState == 1) {
     lastPrintTime = currentTime;
-    Serial.println("DATA =>"+message);
-    Serial.println("RAWDATA => " +CellData );
+    //Serial.println("DATA =>"+message);
+    Serial.println("RD CELL => " +CellData+"RD GNSS => "+GNSSData);
     if(!readToSendData.sendData(message, 1000)) {
       //OMITIR EN LA FUNCION sendResposeCommand "+CGNSSINFO: ,,,,,,,,,,,,,,,"
       Serial.println("TRACKEO POR TIEMPO NO ENVIADO");
