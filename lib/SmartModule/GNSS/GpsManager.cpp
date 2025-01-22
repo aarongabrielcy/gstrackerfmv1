@@ -2,6 +2,25 @@
 
 GpsManager::GpsManager(SIM7600& sim7600) : simModule(sim7600) {}
 
+bool GpsManager::stateGps() {
+    String state_cmd = "AT+CGPS?";
+    String state = simModule.sendCommandWithResponse(state_cmd.c_str(), 3000);
+    state = utils.cleanDelimiter(state, "+CGNSSINFO: ");
+    //Serial.println(state_cmd+" =>"+state+"*");
+    if(state == "1,1OK") {
+        //Serial.println(state_cmd+"if:true"+ state);
+        return true;
+    }else if( state == "1,1") {
+        //Serial.println(state_cmd+"else:true"+ state);
+        return true;
+    }
+    else if(state == "0,1OK") {
+        Serial.println(state_cmd+"=>RSP: "+ state);
+        return false;
+    }
+    //Serial.println(state_cmd+"false"+ state);
+    return true;
+}
 void GpsManager::activeGps(int state) {
     String cgps_cmd = "AT+CGPS="+String(state);
     String cgps = simModule.sendCommandWithResponse(cgps_cmd.c_str(), 3000);
@@ -56,7 +75,7 @@ GpsManager::GPSData GpsManager::parse(const char *data) {
         if (!tokens[11].isEmpty()) {
             gpsData.speed = tokens[11].toFloat() * 1.85;
         }
-        gpsData.course = !tokens[12].isEmpty() ? tokens[12].toFloat(): 0.0;
+        gpsData.course = !tokens[12].isEmpty() ? tokens[12].toFloat(): 0.1;
         /*if (!tokens[12].isEmpty()) {
         float parsedCourse = tokens[12].toFloat();
         gpsData.course = (parsedCourse > 0) ? lastValidCourse = parsedCourse : lastValidCourse;

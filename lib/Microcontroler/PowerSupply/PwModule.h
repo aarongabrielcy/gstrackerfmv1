@@ -1,5 +1,5 @@
-#ifndef CONNECTION_H
-#define CONNECTION_H
+#ifndef PWMODULE_H
+#define PWMODULE_H
 
 #include <Arduino.h>
 #include "Config.h"
@@ -16,5 +16,7 @@ public:
     void blinkLedGnss(int fixState);
     void initInIgn(int pin);
     bool getStateIgn();
+    void OffModule();
+    void restartMicro();
 };
 #endif

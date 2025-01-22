@@ -7,23 +7,27 @@ bool Registration::netRegistrationState() {
     String creg = simModule.sendCommandWithResponse(creg_cmd.c_str(), 4000);
     Serial.println("AT+CREG => "+creg);
     if(creg == "0,1") {
-        Serial.println("Modulo registrado a la red!");
+        Serial.println("Modulo conectado a la red local");
         return true;
     }
     return false;
 }
 
-void Registration::networkRegistration() {
+bool Registration::networkRegistration() {
     String cgact_cmd = "AT+CGACT=1,1";
     String cgact = simModule.sendCommandWithResponse(cgact_cmd.c_str(), 4000);
     Serial.println("AT+CGACT => "+cgact);
     if(cgact == "OK"){
         Serial.println("Comando "+cgact_cmd+" enviado exitosamente");
+        return true;
     }else if(cgact == "+CME ERROR: unknown") {
-        Serial.println("Reiniciando Modulo... ");
+        //Serial.println("Reiniciando Modulo... ");
+        return false;
     }
+    return false;
 }
-void Registration::softReset(){
+
+void Registration::softReset() {
   String cfunr_cmd = "AT+CFUN=1,1";
   String cfunr = simModule.sendCommandWithResponse(cfunr_cmd.c_str(), 4000);
   Serial.println("Rsp CMD => "+cfunr);

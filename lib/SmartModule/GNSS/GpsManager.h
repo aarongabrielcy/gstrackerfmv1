@@ -16,6 +16,7 @@ class GpsManager {
 
     public:
         GpsManager(SIM7600& SIM7600);
+        bool stateGps();
         void activeGps(int state);
         void confiGpsReports(int interval);
         struct GPSData {
@@ -30,8 +31,8 @@ class GpsManager {
         String date;
         String utc_time;
         float altitude;
-        float speed;
-        float course;
+        float speed = 0.00;
+        float course = 0.00;
         float pdop;
         float hdop;
         float vdop;

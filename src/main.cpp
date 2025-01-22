@@ -10,6 +10,7 @@
 #include "SimModule/Information.h"
 #include "PowerSupply/AdcInputs.h"
 #include "GPRS/Registration.h"
+#include "GPRS/CellularAnt.h"
 
 SIM7600 simModule(Serial1);
 PwModule pwModule;
@@ -18,6 +19,7 @@ GpsManager gpsManager(simModule);
 ReadToSendData readToSendData(simModule);
 Information information(simModule);
 Registration registration(simModule);
+CellularAnt cellularAnt(simModule);
 AdcInputs adcInputs;
 Utils utils;
 
@@ -29,12 +31,15 @@ bool LaststateIgnition = HIGH;
 
 unsigned long previous_time_send = 0;
 unsigned long previous_time_ign_off = 0;
-const unsigned long sendDataTimeout = SEND_DATA_HEART_BEAT;
-const unsigned long sendDataIgnOff = SEND_DATA_ING_OFF;
+const unsigned long sendDataTimeout = 1788000;
+const unsigned long sendDataIgnOff = 1800000;
 
 bool fix;
 String GNSSData;
+String CellData;
+
 bool ignState;
+bool gpsState;
 String message;
 String heart_beat;
 String imei;
@@ -42,13 +47,13 @@ String datetime;
 String latitude = "0.0", longitude = "0.0"; // Coordenadas como String
 String last_valid_latitude = "0.0", last_valid_longitude = "0.0"; // Últimas coordenadas válidas como String
 double distanceAccumulated = 0.0; // Distancia acumulada
-
+int reconectCounter = 0;
 void handleSerialInput();
 double calculateHaversine(double lat1, double lon1, double lat2, double lon2);
 bool checkSignificantCourseChange(float currentCourse);
-void ignition_event(GpsManager::GPSData gpsData);
-void event_generated(GpsManager::GPSData gpsData, int event);
-void reconectServer();
+void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData);
+void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
+void reconectServices();
 
 void setup() {
 
@@ -57,10 +62,11 @@ void setup() {
   pwModule.powerKey();
   pwModule.powerLedGnss();
   simModule.begin();
-  do { Serial.println("Inicializando Modulo..."); } while(!netManager.initializeModule());
+
+  do { Serial.println("Inicializando Modulo..."); gpsManager.confiGpsReports(0); } while(!netManager.initializeModule());
   registration.networkRegistration();
-  do { Serial.println("Registrando red ..."); registration.networkRegistration();} while (!registration.netRegistrationState());
-  
+  do { Serial.println("conectado a la red local ..."); } while (!registration.netRegistrationState());
+  do { Serial.println("conectado a la red celular ...");} while (!registration.networkRegistration());
   
   imei = information.getDevID();
   netManager.activeTcpService();
@@ -73,52 +79,63 @@ void setup() {
 void loop() {
   handleSerialInput();
   GNSSData = simModule.sendReadDataToGNSS(1000);
-  //GNSSData == ",,,,,,,,,,,,,,," ? fix = 0 : fix = 1;   
+  CellData = cellularAnt.cellInformation(1500);
   fix = GNSSData != ",,,,,,,,,,,,,,,";
+  
   GpsManager::GPSData gpsParseData = gpsManager.parse(GNSSData.c_str());
+  CellularAnt::CellularData cellParseData = cellularAnt.parse(CellData.c_str());
+
   pwModule.getStateIgn() ? ignState = 0 : ignState = 1;
-  ignition_event(gpsParseData);
+  
+  
   if (fix) {
-        // Calcular la distancia desde la última posición válida
-        double currentDistance = calculateHaversine(
-            atof(last_valid_latitude.c_str()), atof(last_valid_longitude.c_str()), 
-            gpsParseData.latitude, gpsParseData.longitude
-        );
+    // Calcular la distancia desde la última posición válida
+    double currentDistance = calculateHaversine(
+      atof(last_valid_latitude.c_str()), atof(last_valid_longitude.c_str()), 
+      gpsParseData.latitude, gpsParseData.longitude );
         // Acumular la distancia recorrida
-        distanceAccumulated += currentDistance;
+      distanceAccumulated += currentDistance;
 
         // Verificar si se alcanzaron 100 metros
-        if (distanceAccumulated >= 150.0 && ignState == 0 && gpsParseData.speed > 20) {
-            Serial.println("Distancia recorrida >= 100m. Enviando datos...");
-            readToSendData.sendData(message, 1000);
-            distanceAccumulated = 0.0; // Reiniciar la distancia acumulada
-        }
-        datetime = gpsParseData.date+DLM+gpsParseData.utc_time;
-        // Formatear las coordenadas para enviarlas en el mensaje
-        latitude = utils.formatCoordinates(gpsParseData.latitude, gpsParseData.ns_indicator);
-        longitude = utils.formatCoordinates(gpsParseData.longitude, gpsParseData.ew_indicator);
-        // Actualizar las últimas coordenadas válidas en formato String
-        last_valid_latitude = latitude;
-        last_valid_longitude = longitude;
+      if (distanceAccumulated >= 150.0 && ignState == 0 && gpsParseData.speed > 20) {
+        Serial.println("Distancia recorrida >= 100m. Enviando datos...");
+        readToSendData.sendData(message, 1000);
+        distanceAccumulated = 0.0; // Reiniciar la distancia acumulada
+      }
+      datetime = gpsParseData.date+DLM+gpsParseData.utc_time;
+      // Formatear las coordenadas para enviarlas en el mensaje
+      latitude = utils.formatCoordinates(gpsParseData.latitude, gpsParseData.ns_indicator);
+      longitude = utils.formatCoordinates(gpsParseData.longitude, gpsParseData.ew_indicator);
+      // Actualizar las últimas coordenadas válidas en formato String
+      last_valid_latitude = latitude;
+      last_valid_longitude = longitude;
 
     } else {
+        if(!gpsManager.stateGps() ) {
+          Serial.println("gps apagado encendiendo... ");
+          gpsManager.activeGps(1);
+        }
+        
         datetime = netManager.getDateTime(); // "AT+CTZU=1" Actualiza la hora,"AT+CTZR=1" actualiza la zona horaria,"AT&W" guarda los datos en la memoria no volatil
         // Usar las últimas coordenadas válidas si no hay fix
         latitude = last_valid_latitude;
         longitude = last_valid_longitude;
   }
+  ignition_event(cellParseData, gpsParseData);
   float battery = adcInputs.getBattValue(); 
   float power = adcInputs.getPowerValue();
 
-  message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+";103682809;334;020;40C6;20;"+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+
-            gpsParseData.course+DLM+gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;
+    message = String(Headers::STT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellParseData.cellId+DLM+cellParseData.mcc+DLM+cellParseData.mnc+
+    DLM+cellParseData.lac+DLM+cellParseData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsParseData.speed+DLM+gpsParseData.course+DLM+
+    gpsParseData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;1;1;0929"+DLM+battery+DLM+power;  
+  
   heart_beat = String(Headers::ALV)+DLM+imei;
   
   if (checkSignificantCourseChange(gpsParseData.course) && ignState == 1) {
     Serial.print(" Envío en curva = >");
     if(!readToSendData.sendData(message, 1000)) {
       Serial.println("TRACKEO POR CURVA NO ENVIADO");
-      void reconectServer();
+      reconectServices();
     }
     return; 
   }
@@ -127,11 +144,11 @@ void loop() {
   if (currentTime - lastPrintTime >= interval && ignState == 1) {
     lastPrintTime = currentTime;
     Serial.println("DATA =>"+message);
-    Serial.println("RAWDATA => " +GNSSData );
+    Serial.println("RAWDATA => " +CellData );
     if(!readToSendData.sendData(message, 1000)) {
       //OMITIR EN LA FUNCION sendResposeCommand "+CGNSSINFO: ,,,,,,,,,,,,,,,"
       Serial.println("TRACKEO POR TIEMPO NO ENVIADO");
-      void reconectServer();
+      reconectServices();
     }
   }
   unsigned long current_time = millis();
@@ -141,7 +158,7 @@ void loop() {
     Serial.println("tiempo transcurrido ACTIVAR HEART BEAT => "); 
     if(!readToSendData.sendData(heart_beat, 1000)) {
       Serial.println("HEART BEAT NO ENVIADO");
-      void reconectServer();
+      reconectServices();
     }
   }
   if(current_time - previous_time_ign_off >= sendDataIgnOff && ignState == 0) {
@@ -150,7 +167,7 @@ void loop() {
     Serial.println("tiempo transcurrido con motor apagado => "); 
     if(!readToSendData.sendData(message, 1000)) {
       Serial.println("Mensaje con el motor apagado no enviado");
-      void reconectServer();
+      reconectServices();
     }
   }
   pwModule.blinkLedGnss(fix);
@@ -159,6 +176,7 @@ void handleSerialInput() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     String response = simModule.sendCommandWithResponse(command.c_str(), AT_COMMAND_TIMEOUT);
+      response = utils.removePattern(response, "+CGNSSINFO: ,,,,,,,,,,,,,,,");
     Serial.print("CLEAN RSP |=> ");
     Serial.println(response);
   }
@@ -181,25 +199,26 @@ bool checkSignificantCourseChange(float currentCourse) {
   //previousCourse = currentCourse;  // Actualizar de todos modos para la próxima comparación
   return false;
 }
-void ignition_event(GpsManager::GPSData gpsData) {
+void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData) {
   int StateIgnition = pwModule.getStateIgn();
   if (StateIgnition == LOW && LaststateIgnition == HIGH) {
     Serial.println("*** ¡ignition ON! **** ");
 
-    event_generated(gpsData, IGNITON_ON);
+    event_generated(cellData, gpsData, IGNITON_ON);
     
   }else if(StateIgnition == HIGH && LaststateIgnition == LOW) {
     Serial.println("**** ¡ignition OFF! ***** ");
 
-    event_generated(gpsData, IGNITON_OFF);
+    event_generated(cellData, gpsData, IGNITON_OFF);
   }
   LaststateIgnition = StateIgnition;
 }
-void event_generated(GpsManager::GPSData gpsData, int event) {
+void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event) {
 
   String data_event = "";
-    data_event = String(Headers::ALT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+";103682809;334;020;40C6;20;"+latitude+DLM+longitude+DLM+gpsData.speed+DLM+
-                 gpsData.course+DLM+gpsData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;"+event+";;";
+  data_event = String(Headers::ALT)+DLM+imei+DLM+"3FFFFF;32;1.0.0;1;"+datetime+DLM+cellData.cellId+DLM+cellData.mcc+
+                DLM+cellData.mnc+DLM+cellData.lac+DLM+cellData.rxLev+DLM+latitude+DLM+longitude+DLM+gpsData.speed+
+                DLM+gpsData.course+DLM+gpsData.gps_svs+DLM+fix+DLM+trackingCourse+"000000"+ignState+";00000000;"+event+";;";
     Serial.println("Event => "+ data_event);
     readToSendData.sendData(data_event, 2000);
 }
@@ -212,7 +231,18 @@ double calculateHaversine(double lat1, double lon1, double lat2, double lon2) {
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return R * c; // Distancia en metros
 }
-void reconectServer() {
+void reconectServices() {
+  //cuando reinicies el modulo activa el gps y gnssinfo de nuevo
+  Serial.println("Reconectando Servicios.. ");
+  registration.networkRegistration();
   netManager.activeTcpService();
   netManager.configTcpServer(DEFAULT_SVR, DEFAULT_PORT);
+  reconectCounter++;
+
+  if (reconectCounter == 10) {
+    Serial.println("La función reconectServices() se ha ejecutado 10 veces.");
+    registration.softReset();
+    reconectCounter = 0; // Reiniciar el contador después de alcanzar 10
+    fix = 0;
+  }
 }

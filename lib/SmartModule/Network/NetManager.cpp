@@ -5,7 +5,8 @@ NetManager::NetManager(SIM7600& sim7600) : simModule(sim7600) {}
 bool NetManager::initializeModule() {
   String at_cmd = "AT+AT";
   String at = simModule.sendCommandWithResponse(at_cmd.c_str(), 4000);
-  if(at == "AT"){
+  Serial.println("AT RSP => "+ at);
+  if(at == "AT") {
     return true;
   }
   Serial.println("Error initializing module!");

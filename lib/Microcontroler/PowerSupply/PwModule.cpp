@@ -4,6 +4,14 @@ void PwModule::powerModule(){
   pinMode(POWER_SIM_PIN, OUTPUT);
   digitalWrite(POWER_SIM_PIN, HIGH);  
 }
+void PwModule::OffModule(){
+  pinMode(POWER_SIM_PIN, OUTPUT);
+  digitalWrite(POWER_SIM_PIN, LOW);  
+}
+
+void PwModule::restartMicro() {
+  esp_restart();
+}
 
 void PwModule::powerKey(){
   pinMode(POWER_KEY_PIN, OUTPUT);

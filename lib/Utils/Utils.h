@@ -16,5 +16,7 @@ public:
     String formatDate(const String &date);
     String formatTime(const String &utcTime);
     String getFormatUTC(String dt);
+    String cleanDelimiter(String str, const String &substring);
+    String removePattern(String str, const String &pattern);
 };
 #endif

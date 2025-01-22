@@ -9,7 +9,7 @@ private:
 public:
     Registration(SIM7600& sim7600);
     bool netRegistrationState();
-    void networkRegistration();
+    bool networkRegistration();
     void softReset();
 };
 
