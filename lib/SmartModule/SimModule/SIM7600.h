@@ -11,10 +11,11 @@ private:
   bool isAllowedCommand(const String& command);
   int commandType(const String& command);
 
-  static const char* allowedCommands[57];
+  static const char* allowedCommands[63];
 public:
   SIM7600(HardwareSerial& serial);
   void begin();
+  String readSerialMonitor();
   String sendCommandWithResponse(const char* command, int timeout);
   String processResponse(const String& command, const String& fcommand, const String& response);
   String sendReadDataToServer(const String& fcommand, const String& message, int timeout);
