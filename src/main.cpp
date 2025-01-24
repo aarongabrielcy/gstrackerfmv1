@@ -54,7 +54,6 @@ bool checkSignificantCourseChange(float currentCourse);
 void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData);
 void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
 void reconectServices();
-
 void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE);
@@ -73,7 +72,7 @@ void setup() {
   gpsManager.activeGps(1);
   gpsManager.confiGpsReports(1);
   netManager.configTcpServer(DEFAULT_SVR, DEFAULT_PORT);
-  pwModule.initInIgn(INPUT_IGN);
+  pwModule.initInIgn(INPUT_IGN);  
 }
 
 void loop() {

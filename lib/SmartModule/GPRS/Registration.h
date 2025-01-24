@@ -8,6 +8,7 @@ private:
     SIM7600& simModule;
 public:
     Registration(SIM7600& sim7600);
+    void apnRegistration(char *apn);
     bool netRegistrationState();
     bool networkRegistration();
     void softReset();

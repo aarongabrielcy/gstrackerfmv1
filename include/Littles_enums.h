@@ -7,12 +7,14 @@ enum dateTimeType {
 };
 
 enum cmdType {
-  TEST = 0,
-  READ = 1,
-  WRITE = 2,
+  TEST    = 0,
+  READ    = 1,
+  WRITE   = 2,
   EXECUTE = 3,
-  SEND = 4,
-  UNKNOWN = -1
+  SEND    = 4,
+  UNKNOWN = -1,
+  CMD     = 5,
+  PRG     = 6
 };
 enum AlertId {
   IGNITON_ON        = 33, 
@@ -26,5 +28,10 @@ enum AlertId {
   SHOCKED           = 15,
   CRASH_DETECTED    = 16,
   PANIC_BUTTON      = 42,
+}; 
+
+enum InternalCommands {
+
 };
+
 #endif

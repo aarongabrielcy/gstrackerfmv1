@@ -33,3 +33,12 @@ void Registration::softReset() {
   Serial.println("CMD"+cfunr_cmd+"Rsp CMD => "+cfunr);
 
 }
+
+void Registration::apnRegistration(char *apn) {
+    String apn_cmd = "AT+CGDCONT=1,\"IP\",\"" + String(apn) + "\"";
+    String rsp_apn = simModule.sendCommandWithResponse(apn_cmd.c_str(), 4000);
+    Serial.println("CMD"+apn_cmd+"Rsp CMD => "+rsp_apn);
+}
+
+
+

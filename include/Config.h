@@ -29,7 +29,27 @@ struct Headers {
     static constexpr const char *ALV = "ALV";
     static constexpr const char *RES = "RES";
     static constexpr const char *CMD = "CMD";
+    static constexpr const char *PRG = "PRG";
 };
+
+struct Apns {
+    static constexpr const char *TELCEL = "internet.itelcel.com";
+    static constexpr const char *ATTMX = "ott.iot.attmex.mx";
+    static constexpr const char *ATTUS = "iot0119.com.attz";
+    static constexpr const char *VERIZON = "vzwinternet";
+    static constexpr const char *GSTRACKME = "gstrackme.itelcel.com";
+};
+
+struct gstCmds {
+    static constexpr const char *RESET    = "0303";
+    static constexpr const char *SECO_ON  = "0401";
+    static constexpr const char *SECO_OFF = "0402";
+    static constexpr const char *CONFIG   = "0305";
+    static constexpr const char *APN_IP   = "1001";
+};
+
 #define DLM ";" //delimiter
 #define CHANGE_COURSE 20
+extern String imei;
+
 #endif

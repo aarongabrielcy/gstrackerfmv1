@@ -8,10 +8,12 @@
 class SIM7600 {
 private:
   HardwareSerial& simSerial;
+  String isInternalCommands(const String& command);
   bool isAllowedCommand(const String& command);
   int commandType(const String& command);
 
   static const char* allowedCommands[57];
+  static const char* internalCommands[5];
 public:
   SIM7600(HardwareSerial& serial);
   void begin();

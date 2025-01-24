@@ -5,7 +5,7 @@ const char* SIM7600::allowedCommands[57] = {
     "SIMEI", "CCID", "CPSI", "CNMP", "CNSMOD",  "CCLK", "CTZU", "CGPS", "CGPSINFO", "CGPSCOLD", "CGPSHOT", "CGNSSINFO", "CREG", "CGPADDR","CGPSNMEA","CMEE","CPIN", "CSPN", 
     "CSCLK", "CBC", "CPMUTEMP", "CNAOP", "CGREG", "CMGF", "CPMS", "CNMI", "CMGS", "CMGR", "CMGL", "CMGD", "CSCA", "CSMS", "CSCB", "CSMP", "CSDH", "CMGRD", "CMGSEX"
 };
-
+const char* SIM7600::internalCommands[5] = {gstCmds::RESET, gstCmds::SECO_ON, gstCmds::SECO_OFF, gstCmds::CONFIG, gstCmds::APN_IP };
 // Constructor
 SIM7600::SIM7600(HardwareSerial& serial) : simSerial(serial) {}
 
@@ -32,15 +32,26 @@ String SIM7600::sendCommandWithResponse(const char* command, int timeout) {
     if (posEqual != -1) {
       formattedCommand = formattedCommand.substring(0, posEqual);  // Mantener solo hasta antes del '='
     }
-  }else if(type == TEST){
+  }else if(type == TEST) {
     if (formattedCommand.endsWith("=?") ) {
       formattedCommand.remove(formattedCommand.length() - 2); // Remover sufijo
     }
+  }else if(type == CMD) {
+    formattedCommand.replace(";","");
+    String get_imei = formattedCommand.substring(0, 10);
+    String get_inter_cmd = formattedCommand.substring(10);
+    Serial.println("get IMEI: "+ get_imei);
+    Serial.println("get Command:"+ get_inter_cmd);
+    if(get_imei == imei) {
+        String res =  isInternalCommands(get_inter_cmd);
+        return String(Headers::RES)+DLM+command+DLM+res;
+    }
+    
   }
   /*Serial.print("Comando formateado: ");
   Serial.println(formattedCommand);*/
   
-  if (!isAllowedCommand(formattedCommand)) {
+  if (!isAllowedCommand(formattedCommand)) {  
     Serial.println("Comando no permitido.");
     return "INVALID COMMAND";
   }
@@ -92,6 +103,24 @@ String SIM7600::processResponse(const String& command,  const String& fcommand, 
   return processedResponse;
 }
 
+String SIM7600::isInternalCommands(const String& command) {
+  Serial.println("conmand ?> "+command );
+  if (command == String(gstCmds::RESET)) {
+    Serial.println("Reiniciando modulo por comando!");
+    return "Reboot";
+  }else if(command == String(gstCmds::CONFIG)) {
+    Serial.println("Consultando configuracion del modulo!");
+    return "INFO";
+  }else if(command == String(gstCmds::APN_IP)) {
+    Serial.println("configuracion del APN Ejecutado!");
+    return "TRUE";
+  }
+  else {
+    return "Unknown CMD";
+  }
+  return "ERR";
+}
+
 bool SIM7600::isAllowedCommand(const String& command) {
   for (const char* cmd : allowedCommands) {
     if (command == cmd) {
@@ -114,10 +143,14 @@ int SIM7600::commandType(const String& command) {
   }else if (command.startsWith("AT+") && command.indexOf('=') == -1){
    //Serial.println("Es un comando de ejecución (EXECUTE).");
    return EXECUTE;
-  }else if(command.startsWith("STT") ){  
+  }else if(command.startsWith("STT") ) {  
     Serial.println("ES una Cadena de texto (SEND).");
     return SEND;
-  }else{ 
+  }else if(command.startsWith("CMD") ) {  
+    Serial.println("ES un COMANDO interno.");
+    return CMD;
+  }
+  else { 
     //Serial.println("Tipo de comando desconocido.");
     return UNKNOWN;
   }
