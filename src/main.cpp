@@ -22,6 +22,7 @@ Registration registration(simModule);
 CellularAnt cellularAnt(simModule);
 AdcInputs adcInputs;
 Utils utils;
+SemaphoreHandle_t xSemaphore; 
 
 unsigned long lastPrintTime = 0; // Tiempo del último envío
 unsigned long interval = 20000;
@@ -54,7 +55,7 @@ bool checkSignificantCourseChange(float currentCourse);
 void ignition_event(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData);
 void event_generated(CellularAnt::CellularData cellData, GpsManager::GPSData gpsData, int event);
 void reconectServices();
-
+void ledTask(void *pvParameters);
 void setup() {
 
   Serial.begin(SERIAL_BAUD_RATE);
@@ -74,6 +75,11 @@ void setup() {
   gpsManager.confiGpsReports(1);
   netManager.configTcpServer(DEFAULT_SVR, DEFAULT_PORT);
   pwModule.initInIgn(INPUT_IGN);
+
+    xSemaphore = xSemaphoreCreateMutex();
+
+    xTaskCreatePinnedToCore(ledTask, "ledTask", 10000, NULL, 2, NULL, 1); 
+  
 }
 
 void loop() {
@@ -175,7 +181,11 @@ void loop() {
       reconectServices();
     }
   }
-  pwModule.blinkLedGnss(fix);
+}
+void ledTask(void *pvParameters) {
+    while (true) {
+        pwModule.blinkLedGnss(fix);
+    }
 }
 void handleSerialInput() {
   if (Serial.available()) {

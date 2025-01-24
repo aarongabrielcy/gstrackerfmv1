@@ -7,7 +7,7 @@
 class PwModule {
 private:
     unsigned long previousMillis = 0;
-    unsigned long ledInterval = 100;
+    unsigned long ledInterval = 400;
     int ledState = LOW, pinIgn;
 public:
     void powerKey();
